@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Net.Http;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using TMDbLib.Client;
@@ -44,31 +39,30 @@ namespace MovieRecommender.Services
             return genreMap;
         }
 
-        public async Task<List<Models.Movie>> DiscoverMoviesAsync(MovieFilterViewModel filters)
+        public async Task<List<SearchMovie>> DiscoverMoviesAsync(MovieFilterViewModel filters)
         {
             try
             {
                 var allMovies = new List<SearchMovie>();
                 var selectedGenreIds = new List<int>();
 
-                // if (filters.SelectedGenres.Any())
-                // {
-                //     var selectedGenres = filters.SelectedGenres.Select(g => g).ToList();
-                //     selectedGenreIds = _genreMap
-                //         .Where(kvp => selectedGenres.Contains(kvp.Value))
-                //         .Select(kvp => kvp.Key)
-                //         .ToList();
+                if (filters.SelectedGenres.Any())
+                {
+                    var selectedGenres = filters.SelectedGenres.Select(g => g).ToList();
+                    selectedGenreIds = _genreMap
+                        .Where(kvp => selectedGenres.Contains(kvp.Value))
+                        .Select(kvp => kvp.Key)
+                        .ToList();
 
-                //     Console.WriteLine($"Selected genres: {string.Join(", ", selectedGenres)}");
-                //     Console.WriteLine($"Selected genre IDs: {string.Join(", ", selectedGenreIds)}");
-                // }
+                    Console.WriteLine($"Selected genres: {string.Join(", ", selectedGenres)}");
+                    Console.WriteLine($"Selected genre IDs: {string.Join(", ", selectedGenreIds)}");
+                }
 
                 // Get movies from different sources to ensure comprehensive results
                 for (int page = 1; page <= 5; page++)
                 {
                     //Build discover API URL with all parameters
                     var url = $"{BaseUrl}/discover/movie?api_key={_client.ApiKey}&";
-
 
                     url += $"page={page}&";
                     url += "include_adult=false&";
@@ -95,7 +89,7 @@ namespace MovieRecommender.Services
                     var ratingUrl = url + "sort_by=vote_average.desc";
 
                     // Get movies sorted by rating
-                    var ratingResponse = await _httpClient.GetAsync(url);
+                    var ratingResponse = await _httpClient.GetAsync(ratingUrl);
                     if (ratingResponse.IsSuccessStatusCode)
                     {
                         var content = await ratingResponse.Content.ReadAsStringAsync();
@@ -148,65 +142,17 @@ namespace MovieRecommender.Services
                     }
                 }
 
-                var genreFiltered = ratingFiltered;
-                if (selectedGenreIds.Any())
-                {
-                    genreFiltered = ratingFiltered
-                        .Where(m => m.GenreIds != null &&
-                                  selectedGenreIds.All(id => m.GenreIds.Contains(id)))
-                        .ToList();
-
-                    Console.WriteLine($"Found {genreFiltered.Count} movies after genre filtering");
-                    if (genreFiltered.Count == 0)
-                    {
-                        Console.WriteLine($"Genre filter IDs: {string.Join(", ", selectedGenreIds)}");
-                        if (ratingFiltered.Any())
-                        {
-                            var sampleMovie = ratingFiltered.First();
-                            Console.WriteLine($"Sample movie genres: {string.Join(", ", sampleMovie.GenreIds ?? new List<int>())}");
-                        }
-                    }
-                }
-
-                // Convert to our movie model and sort
-                var result = genreFiltered
-                    .Select(m => CreateMovie(m))
+                // Return the filtered movies sorted by rating
+                return ratingFiltered
                     .OrderByDescending(m => m.VoteAverage)
                     .Take(50)
                     .ToList();
-
-                Console.WriteLine($"Returning {result.Count} movies after processing");
-                foreach (var movie in result)
-                {
-                    Console.WriteLine($"- {movie.Title} ({movie.ReleaseDate.Year}) - Rating: {movie.VoteAverage} - Genres: {string.Join(", ", movie.Genres)}");
-                }
-
-                return result;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in DiscoverMoviesAsync: {ex}");
-                return new List<Models.Movie>();
+                return new List<SearchMovie>();
             }
-        }
-
-        private Models.Movie CreateMovie(SearchMovie m)
-        {
-            var genres = (m.GenreIds ?? Enumerable.Empty<int>())
-                .Where(id => _genreMap.ContainsKey(id))
-                .Select(id => _genreMap[id])
-                .ToList();
-
-            return new Models.Movie
-            {
-                Id = m.Id,
-                Title = m.Title ?? "",
-                Overview = m.Overview ?? "",
-                PosterPath = m.PosterPath ?? "",
-                ReleaseDate = m.ReleaseDate ?? DateTime.MinValue,
-                VoteAverage = m.VoteAverage,
-                Genres = genres
-            };
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMDbLib.Objects.Search;
 
 namespace MovieRecommender.Models
 {
@@ -8,12 +9,12 @@ namespace MovieRecommender.Models
         public int? EndYear { get; set; }
         public List<string> SelectedGenres { get; set; }
         public double? MinimumRating { get; set; }
-        public List<Movie> Movies { get; set; }
+        public List<SearchMovie> Movies { get; set; }
 
         public MovieFilterViewModel()
         {
             SelectedGenres = new List<string>();
-            Movies = new List<Movie>();
+            Movies = new List<SearchMovie>();
         }
 
         public static readonly List<string> AllGenres = new List<string>

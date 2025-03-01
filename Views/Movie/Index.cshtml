@@ -1,4 +1,5 @@
 @model MovieRecommender.Models.MovieFilterViewModel
+@using TMDbLib.Objects.Search
 
 @{
     ViewData["Title"] = "Movie Recommender";
@@ -60,19 +61,19 @@
                             <div class="card h-100">
                                 @if (!string.IsNullOrEmpty(movie.PosterPath))
                                 {
-                                    <img src="@movie.FullPosterPath" class="card-img-top" alt="@movie.Title">
+                                    <img src="https://image.tmdb.org/t/p/w500@(movie.PosterPath)" class="card-img-top" alt="@movie.Title">
                                 }
                                 <div class="card-body">
                                     <h5 class="card-title">@movie.Title</h5>
                                     <p class="card-text">
                                         <small class="text-muted">
-                                            Released: @movie.ReleaseDate.ToString("yyyy") | Rating: @movie.VoteAverage
+                                            Released: @(movie.ReleaseDate?.ToString("yyyy") ?? "N/A") | Rating: @movie.VoteAverage
                                         </small>
                                     </p>
                                     <p class="card-text">@movie.Overview</p>
                                     <p class="card-text">
                                         <small class="text-muted">
-                                            Genres: @string.Join(", ", movie.Genres)
+                                            Genres: @string.Join(", ", movie.GenreIds?.Select(id => MovieFilterViewModel.AllGenres.ElementAtOrDefault((int)id - 1) ?? "Unknown") ?? Array.Empty<string>())
                                         </small>
                                     </p>
                                 </div>

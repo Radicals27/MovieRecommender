@@ -14,12 +14,13 @@ A .NET Core web application that provides movie recommendations using The Movie 
 ## Prerequisites
 
 - .NET 6.0 or later
-- TMDB API Key
+- TMDB API Key (get one at https://www.themoviedb.org/settings/api)
 
 ## Setup
 
 1. Clone the repository
-2. Add your TMDB API key to `appsettings.json`:
+2. Copy `appsettings.template.json` to `appsettings.json` and `appsettings.Development.json`
+3. Add your TMDB API key to both configuration files:
    ```json
    {
      "MovieDbSettings": {
@@ -27,14 +28,18 @@ A .NET Core web application that provides movie recommendations using The Movie 
      }
    }
    ```
-3. Run the application:
+4. Run the application:
    ```bash
    dotnet run
    ```
 
 ## Configuration
 
-The application uses `appsettings.json` for configuration. Make sure to keep your API key secure and never commit it to version control.
+The application uses `appsettings.json` for configuration. For security:
+
+- Never commit your actual API key to version control
+- Use `appsettings.template.json` as a template
+- Keep your API key secure and use different keys for development and production
 
 ## Contributing
 

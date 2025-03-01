@@ -64,55 +64,57 @@ namespace MovieRecommender.Services
                 // }
 
                 // Get movies from different sources to ensure comprehensive results
-                // for (int page = 1; page <= 5; page++)
-                // {
-                // Build discover API URL with all parameters
-                var url = $"{BaseUrl}/discover/movie?api_key={_client.ApiKey}&";
-                // url += $"page={page}&";
-                // url += "include_adult=false&";
-                // url += "vote_count.gte=100&";
-
-                // if (filters.StartYear.HasValue)
-                // {
-                //     url += $"primary_release_date.gte={filters.StartYear}-01-01&";
-                // }
-                // if (filters.EndYear.HasValue)
-                // {
-                //     url += $"primary_release_date.lte={filters.EndYear}-12-31&";
-                // }
-                // if (selectedGenreIds.Any())
-                // {
-                //     url += $"with_genres={string.Join(",", selectedGenreIds)}&";
-                // }
-                // if (filters.MinimumRating.HasValue)
-                // {
-                //     url += $"vote_average.gte={filters.MinimumRating}&";
-                // }
-
-                // // Try rating sort
-                // var ratingUrl = url + "sort_by=vote_average.desc";
-
-                // Get movies sorted by rating
-                var ratingResponse = await _httpClient.GetAsync(url);
-                if (ratingResponse.IsSuccessStatusCode)
+                for (int page = 1; page <= 5; page++)
                 {
-                    var content = await ratingResponse.Content.ReadAsStringAsync();
-                    var ratedMovies = JsonSerializer.Deserialize<SearchContainer<SearchMovie>>(content, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    //Build discover API URL with all parameters
+                    var url = $"{BaseUrl}/discover/movie?api_key={_client.ApiKey}&";
 
-                    if (ratedMovies?.Results != null)
+
+                    url += $"page={page}&";
+                    url += "include_adult=false&";
+                    url += "vote_count.gte=100&";
+
+                    if (filters.StartYear.HasValue)
                     {
-                        allMovies.AddRange(ratedMovies.Results);
-                        Console.WriteLine($"Found {ratedMovies.Results.Count} movies from discover (rating sort)");
+                        url += $"primary_release_date.gte={filters.StartYear}-01-01&";
+                    }
+                    if (filters.EndYear.HasValue)
+                    {
+                        url += $"primary_release_date.lte={filters.EndYear}-12-31&";
+                    }
+                    if (selectedGenreIds.Any())
+                    {
+                        url += $"with_genres={string.Join(",", selectedGenreIds)}&";
+                    }
+                    if (filters.MinimumRating.HasValue)
+                    {
+                        url += $"vote_average.gte={filters.MinimumRating}&";
+                    }
+
+                    // Try rating sort
+                    var ratingUrl = url + "sort_by=vote_average.desc";
+
+                    // Get movies sorted by rating
+                    var ratingResponse = await _httpClient.GetAsync(url);
+                    if (ratingResponse.IsSuccessStatusCode)
+                    {
+                        var content = await ratingResponse.Content.ReadAsStringAsync();
+                        var ratedMovies = JsonSerializer.Deserialize<SearchContainer<SearchMovie>>(content, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (ratedMovies?.Results != null)
+                        {
+                            allMovies.AddRange(ratedMovies.Results);
+                            Console.WriteLine($"Found {ratedMovies.Results.Count} movies from discover (rating sort)");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Error in DiscoverMoviesAsync: {ratingResponse.ReasonPhrase}");
                     }
                 }
-                else
-                {
-                    Console.WriteLine($"Error in DiscoverMoviesAsync: {ratingResponse.ReasonPhrase}");
-                }
-                //}
 
                 foreach (var movie in allMovies)
                 {
@@ -121,22 +123,53 @@ namespace MovieRecommender.Services
 
                 Console.WriteLine($"Found {allMovies.Count} total movies before filtering");
 
-                // Remove duplicates and apply filters
-                var filteredMovies = allMovies
+                // Remove duplicates first
+                var dedupedMovies = allMovies
                     .GroupBy(m => m.Id)
                     .Select(g => g.First())
                     .Where(m => m != null)
-                    .Where(m =>
-                        (!filters.StartYear.HasValue || (m.ReleaseDate?.Year ?? 0) >= filters.StartYear) &&
-                        (!filters.EndYear.HasValue || (m.ReleaseDate?.Year ?? 0) <= filters.EndYear) &&
-                        (!filters.MinimumRating.HasValue || m.VoteAverage >= filters.MinimumRating) &&
-                        (!selectedGenreIds.Any() ||
-                         (m.GenreIds != null && selectedGenreIds.All(id => m.GenreIds.Contains(id)))));
+                    .ToList();
 
-                Console.WriteLine($"Found {filteredMovies.Count()} movies after filtering");
+                Console.WriteLine($"Found {dedupedMovies.Count} movies after removing duplicates");
 
-                // // Convert to our movie model and sort
-                var result = filteredMovies
+                // Skip date filtering since it's already handled in the API call
+                var ratingFiltered = dedupedMovies
+                    .Where(m => !filters.MinimumRating.HasValue || m.VoteAverage >= filters.MinimumRating)
+                    .ToList();
+
+                Console.WriteLine($"Found {ratingFiltered.Count} movies after rating filtering");
+                if (ratingFiltered.Count == 0)
+                {
+                    Console.WriteLine($"Rating filter parameter: MinimumRating={filters.MinimumRating}");
+                    if (dedupedMovies.Any())
+                    {
+                        var sampleMovie = dedupedMovies.First();
+                        Console.WriteLine($"Sample movie rating: {sampleMovie.VoteAverage}");
+                    }
+                }
+
+                var genreFiltered = ratingFiltered;
+                if (selectedGenreIds.Any())
+                {
+                    genreFiltered = ratingFiltered
+                        .Where(m => m.GenreIds != null &&
+                                  selectedGenreIds.All(id => m.GenreIds.Contains(id)))
+                        .ToList();
+
+                    Console.WriteLine($"Found {genreFiltered.Count} movies after genre filtering");
+                    if (genreFiltered.Count == 0)
+                    {
+                        Console.WriteLine($"Genre filter IDs: {string.Join(", ", selectedGenreIds)}");
+                        if (ratingFiltered.Any())
+                        {
+                            var sampleMovie = ratingFiltered.First();
+                            Console.WriteLine($"Sample movie genres: {string.Join(", ", sampleMovie.GenreIds ?? new List<int>())}");
+                        }
+                    }
+                }
+
+                // Convert to our movie model and sort
+                var result = genreFiltered
                     .Select(m => CreateMovie(m))
                     .OrderByDescending(m => m.VoteAverage)
                     .Take(50)

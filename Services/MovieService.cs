@@ -5,6 +5,7 @@ using TMDbLib.Objects.General;
 using TMDbLib.Objects.Search;
 using MovieRecommender.Models;
 using MovieRecommender.Config;
+using Newtonsoft.Json;
 
 namespace MovieRecommender.Services
 {
@@ -33,10 +34,61 @@ namespace MovieRecommender.Services
                 foreach (var genre in genres)
                 {
                     genreMap[genre.Id] = genre.Name;
+                    Console.WriteLine($"Added genre mapping: {genre.Id} -> {genre.Name}");
                 }
             }
 
             return genreMap;
+        }
+
+        public class TmdbResponse
+        {
+            [JsonProperty("results")]
+            public List<TmdbMovie> Results { get; set; }
+        }
+
+        public class TmdbMovie
+        {
+            [JsonProperty("id")]
+            public int Id { get; set; }
+
+            [JsonProperty("title")]
+            public string Title { get; set; }
+
+            [JsonProperty("overview")]
+            public string Overview { get; set; }
+
+            [JsonProperty("poster_path")]
+            public string PosterPath { get; set; }
+
+            [JsonProperty("release_date")]
+            public string ReleaseDate { get; set; }
+
+            [JsonProperty("vote_average")]
+            public double VoteAverage { get; set; }
+
+            [JsonProperty("genre_ids")]
+            public List<int> GenreIds { get; set; }
+
+            public SearchMovie ToSearchMovie()
+            {
+                DateTime? releaseDate = null;
+                if (DateTime.TryParse(ReleaseDate, out DateTime parsedDate))
+                {
+                    releaseDate = parsedDate;
+                }
+
+                return new SearchMovie
+                {
+                    Id = Id,
+                    Title = Title,
+                    Overview = Overview,
+                    PosterPath = PosterPath,
+                    ReleaseDate = releaseDate,
+                    VoteAverage = VoteAverage,
+                    GenreIds = GenreIds ?? new List<int>()
+                };
+            }
         }
 
         public async Task<List<SearchMovie>> DiscoverMoviesAsync(MovieFilterViewModel filters)
@@ -93,15 +145,24 @@ namespace MovieRecommender.Services
                     if (ratingResponse.IsSuccessStatusCode)
                     {
                         var content = await ratingResponse.Content.ReadAsStringAsync();
-                        var ratedMovies = JsonSerializer.Deserialize<SearchContainer<SearchMovie>>(content, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        Console.WriteLine($"Raw API Response: {content.Substring(0, Math.Min(500, content.Length))}...");
 
-                        if (ratedMovies?.Results != null)
+                        var tmdbResponse = JsonConvert.DeserializeObject<TmdbResponse>(content);
+                        if (tmdbResponse?.Results != null)
                         {
-                            allMovies.AddRange(ratedMovies.Results);
-                            Console.WriteLine($"Found {ratedMovies.Results.Count} movies from discover (rating sort)");
+                            var movies = tmdbResponse.Results.Select(m => m.ToSearchMovie()).ToList();
+                            var sampleMovie = movies.FirstOrDefault();
+                            if (sampleMovie != null)
+                            {
+                                Console.WriteLine($"Sample deserialized movie:");
+                                Console.WriteLine($"- Title: {sampleMovie.Title}");
+                                Console.WriteLine($"- Release Date: {sampleMovie.ReleaseDate}");
+                                Console.WriteLine($"- Vote Average: {sampleMovie.VoteAverage}");
+                                Console.WriteLine($"- Genre IDs: {string.Join(", ", sampleMovie.GenreIds ?? new List<int>())}");
+                            }
+
+                            allMovies.AddRange(movies);
+                            Console.WriteLine($"Found {movies.Count} movies from discover (rating sort)");
                         }
                     }
                     else
@@ -132,21 +193,25 @@ namespace MovieRecommender.Services
                     .ToList();
 
                 Console.WriteLine($"Found {ratingFiltered.Count} movies after rating filtering");
-                if (ratingFiltered.Count == 0)
-                {
-                    Console.WriteLine($"Rating filter parameter: MinimumRating={filters.MinimumRating}");
-                    if (dedupedMovies.Any())
-                    {
-                        var sampleMovie = dedupedMovies.First();
-                        Console.WriteLine($"Sample movie rating: {sampleMovie.VoteAverage}");
-                    }
-                }
 
                 // Return the filtered movies sorted by rating
-                return ratingFiltered
+                var result = ratingFiltered
                     .OrderByDescending(m => m.VoteAverage)
                     .Take(50)
                     .ToList();
+
+                // Map genres using our genre map
+                foreach (var movie in result)
+                {
+                    if (movie.GenreIds != null)
+                    {
+                        movie.GenreIds = movie.GenreIds
+                            .Where(id => _genreMap.ContainsKey(id))
+                            .ToList();
+                    }
+                }
+
+                return result;
             }
             catch (Exception ex)
             {

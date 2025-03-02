@@ -108,3 +108,4 @@ appsettings.Development.json
 appsettings.Local.json
 *.Development.json
 *.Local.json 
+appsettings.json

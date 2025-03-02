@@ -58,10 +58,16 @@
                     @foreach (var movie in Model.Movies)
                     {
                         <div class="col">
-                            <div class="card h-100">
+                            <div class="card">
                                 @if (!string.IsNullOrEmpty(movie.PosterPath))
                                 {
-                                    <img src="https://image.tmdb.org/t/p/w500@(movie.PosterPath)" class="card-img-top" alt="@movie.Title">
+                                    <img src="https://image.tmdb.org/t/p/w342@(movie.PosterPath)" 
+                                         srcset="https://image.tmdb.org/t/p/w185@(movie.PosterPath) 185w,
+                                                 https://image.tmdb.org/t/p/w342@(movie.PosterPath) 342w,
+                                                 https://image.tmdb.org/t/p/w500@(movie.PosterPath) 500w"
+                                         sizes="(max-width: 768px) 100vw, 342px"
+                                         class="card-img-top" 
+                                         alt="@movie.Title poster">
                                 }
                                 <div class="card-body">
                                     <h5 class="card-title">@movie.Title</h5>
@@ -71,7 +77,7 @@
                                         </small>
                                     </p>
                                     <p class="card-text">@movie.Overview</p>
-                                    <p class="card-text">
+                                    <p class="card-text movie-genres">
                                         <small class="text-muted">
                                             Genres: @string.Join(", ", movie.GenreIds?.Select(id => {
                                                 switch (id)
@@ -113,13 +119,4 @@
             }
         </div>
     </div>
-</div>
-
-@section Styles {
-    <style>
-        .card-img-top {
-            height: 300px;
-            object-fit: cover;
-        }
-    </style>
-} 
+</div> 

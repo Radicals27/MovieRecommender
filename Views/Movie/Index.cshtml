@@ -56,7 +56,15 @@
         <div class="col-md-8">
             @if (Model.Movies.Any())
             {
-                <div class="row row-cols-1 row-cols-md-2 g-4">
+                @if (Model.Movies.Count() >= 2)
+                {
+                    <div class="mb-3 text-center">
+                        <button type="button" class="btn btn-secondary mx-auto" onclick="shuffleMovies()">
+                            Shuffle Results
+                        </button>
+                    </div>
+                }
+                <div class="row row-cols-1 row-cols-md-2 g-4" id="movieContainer">
                     @foreach (var movie in Model.Movies)
                     {
                         <div class="col">
@@ -122,3 +130,15 @@
         </div>
     </div>
 </div> 
+
+<script>
+function shuffleMovies() {
+    const container = document.getElementById('movieContainer');
+    const movies = Array.from(container.children);
+    
+    for (let i = movies.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        container.appendChild(movies[j]);
+    }
+}
+</script> 

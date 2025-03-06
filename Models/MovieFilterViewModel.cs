@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using TMDbLib.Objects.Search;
 
 namespace MovieRecommender.Models
@@ -16,13 +15,5 @@ namespace MovieRecommender.Models
             SelectedGenres = new List<string>();
             Movies = new List<SearchMovie>();
         }
-
-        public static readonly List<string> AllGenres = new List<string>
-        {
-            "Action", "Adventure", "Animation", "Comedy", "Crime",
-            "Documentary", "Drama", "Family", "Fantasy", "History",
-            "Horror", "Music", "Mystery", "Romance", "Science Fiction",
-            "Thriller", "War", "Western"
-        };
     }
 }

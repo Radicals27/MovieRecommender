@@ -1,6 +1,6 @@
 @model MovieRecommender.Models.MovieFilterViewModel
+@using MovieRecommender.Config
 @using TMDbLib.Objects.Search
-
 @{
     ViewData["Title"] = "Movie Recommender";
 }
@@ -24,6 +24,7 @@
                         <div class="mb-3">
                             <label asp-for="EndYear" class="form-label">End Year</label>
                             <input asp-for="EndYear" class="form-control" type="number" min="1900" max="2024" />
+
                         </div>
                         
                         <div class="mb-3">
@@ -34,7 +35,7 @@
                         <div class="mb-3">
                             <label class="form-label">Genres</label>
                             <div class="row">
-                                @foreach (var genre in MovieFilterViewModel.AllGenres)
+                                @foreach (var genre in MovieDbSettings.AllGenres)
                                 {
                                     <div class="col-6">
                                         <div class="form-check">

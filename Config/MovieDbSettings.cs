@@ -11,5 +11,13 @@ namespace MovieRecommender.Config
         {
             return $"{ImageBaseUrl}{size}{posterPath}";
         }
+
+        public static IReadOnlyCollection<string> AllGenres = new[]
+        {
+            "Action", "Adventure", "Animation", "Comedy", "Crime",
+            "Documentary", "Drama", "Family", "Fantasy", "History",
+            "Horror", "Music", "Mystery", "Romance", "Science Fiction",
+            "Thriller", "War", "Western"
+        };
     }
 }

@@ -33,7 +33,6 @@ namespace MovieRecommender.Services
                 foreach (var genre in genres)
                 {
                     genreMap[genre.Id] = genre.Name;
-                    Console.WriteLine($"Added genre mapping: {genre.Id} -> {genre.Name}");
                 }
             }
 
@@ -104,9 +103,6 @@ namespace MovieRecommender.Services
                         .Where(kvp => selectedGenres.Contains(kvp.Value))
                         .Select(kvp => kvp.Key)
                         .ToList();
-
-                    Console.WriteLine($"Selected genres: {string.Join(", ", selectedGenres)}");
-                    Console.WriteLine($"Selected genre IDs: {string.Join(", ", selectedGenreIds)}");
                 }
 
                 // Get movies from different sources to ensure comprehensive results
@@ -144,24 +140,14 @@ namespace MovieRecommender.Services
                     if (ratingResponse.IsSuccessStatusCode)
                     {
                         var content = await ratingResponse.Content.ReadAsStringAsync();
-                        Console.WriteLine($"Raw API Response: {content.Substring(0, Math.Min(500, content.Length))}...");
 
                         var tmdbResponse = JsonConvert.DeserializeObject<TmdbResponse>(content);
                         if (tmdbResponse?.Results != null)
                         {
                             var movies = tmdbResponse.Results.Select(m => m.ToSearchMovie()).ToList();
                             var sampleMovie = movies.FirstOrDefault();
-                            if (sampleMovie != null)
-                            {
-                                Console.WriteLine($"Sample deserialized movie:");
-                                Console.WriteLine($"- Title: {sampleMovie.Title}");
-                                Console.WriteLine($"- Release Date: {sampleMovie.ReleaseDate}");
-                                Console.WriteLine($"- Vote Average: {sampleMovie.VoteAverage}");
-                                Console.WriteLine($"- Genre IDs: {string.Join(", ", sampleMovie.GenreIds ?? new List<int>())}");
-                            }
 
                             allMovies.AddRange(movies);
-                            Console.WriteLine($"Found {movies.Count} movies from discover (rating sort)");
                         }
                     }
                     else
@@ -170,13 +156,6 @@ namespace MovieRecommender.Services
                     }
                 }
 
-                foreach (var movie in allMovies)
-                {
-                    Console.WriteLine($"- {movie.Title}");
-                }
-
-                Console.WriteLine($"Found {allMovies.Count} total movies before filtering");
-
                 // Remove duplicates first
                 var dedupedMovies = allMovies
                     .GroupBy(m => m.Id)
@@ -184,14 +163,10 @@ namespace MovieRecommender.Services
                     .Where(m => m != null)
                     .ToList();
 
-                Console.WriteLine($"Found {dedupedMovies.Count} movies after removing duplicates");
-
                 // Skip date filtering since it's already handled in the API call
                 var ratingFiltered = dedupedMovies
                     .Where(m => !filters.MinimumRating.HasValue || m.VoteAverage >= filters.MinimumRating)
                     .ToList();
-
-                Console.WriteLine($"Found {ratingFiltered.Count} movies after rating filtering");
 
                 // Return the filtered movies sorted by rating
                 var result = ratingFiltered

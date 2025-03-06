@@ -8,9 +8,9 @@ namespace MovieRecommender.Models
         public required string Title { get; set; }
         public required string Overview { get; set; }
         public required string PosterPath { get; set; }
-        public DateTime ReleaseDate { get; set; }
+        public DateOnly ReleaseDate { get; set; }
         public double VoteAverage { get; set; }
         public List<string> Genres { get; set; } = new();
-        public string FullPosterPath => MovieDbSettings.GetPosterUrl(PosterPath);
+        public Uri FullPosterPath => new Uri(MovieDbSettings.GetPosterUrl(PosterPath));
     }
 }

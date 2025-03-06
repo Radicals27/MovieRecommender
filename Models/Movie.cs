@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+using MovieRecommender.Config;
 
 namespace MovieRecommender.Models
 {
@@ -12,7 +11,6 @@ namespace MovieRecommender.Models
         public DateTime ReleaseDate { get; set; }
         public double VoteAverage { get; set; }
         public List<string> Genres { get; set; } = new();
-
-        public string FullPosterPath => $"https://image.tmdb.org/t/p/w500{PosterPath}";
+        public string FullPosterPath => MovieDbSettings.GetPosterUrl(PosterPath);
     }
 }

@@ -6,14 +6,8 @@ namespace MovieRecommender.Models
     {
         public int? StartYear { get; set; }
         public int? EndYear { get; set; }
-        public List<string> SelectedGenres { get; set; }
+        public IReadOnlyCollection<string> SelectedGenres { get; set; } = Array.Empty<string>();
         public double? MinimumRating { get; set; }
-        public List<SearchMovie> Movies { get; set; }
-
-        public MovieFilterViewModel()
-        {
-            SelectedGenres = new List<string>();
-            Movies = new List<SearchMovie>();
-        }
+        public IReadOnlyCollection<SearchMovie> Movies { get; set; } = Array.Empty<SearchMovie>();
     }
 }

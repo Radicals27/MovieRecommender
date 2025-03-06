@@ -1,5 +1,3 @@
-using TMDbLib.Objects.Search;
-
 namespace MovieRecommender.Models
 {
     public class MovieFilterViewModel
@@ -8,6 +6,6 @@ namespace MovieRecommender.Models
         public int? EndYear { get; set; }
         public IReadOnlyCollection<string> SelectedGenres { get; set; } = Array.Empty<string>();
         public double? MinimumRating { get; set; }
-        public IReadOnlyCollection<SearchMovie> Movies { get; set; } = Array.Empty<SearchMovie>();
+        public IReadOnlyCollection<Movie> Movies { get; set; } = Array.Empty<Movie>();
     }
 }

@@ -84,36 +84,13 @@
                                     <h5 class="card-title">@movie.Title</h5>
                                     <p class="card-text">
                                         <small class="text-muted">
-                                            Released: @(movie.ReleaseDate?.Year > 0 ? movie.ReleaseDate?.ToString("yyyy") : "N/A") | Rating: @(movie.VoteAverage > 0 ? movie.VoteAverage.ToString("F1") : "N/A")
+                                            Released: @(movie.ReleaseDate.Year > 1900 ? movie.ReleaseDate.ToString("yyyy") : "N/A") | Rating: @(movie.VoteAverage > 0 ? movie.VoteAverage.ToString("F1") : "N/A")
                                         </small>
                                     </p>
                                     <p class="card-text">@movie.Overview</p>
                                     <p class="card-text movie-genres">
                                         <small class="text-muted">
-                                            Genres: @string.Join(", ", movie.GenreIds?.Select(id => {
-                                                switch (id)
-                                                {
-                                                    case 28: return "Action";
-                                                    case 12: return "Adventure";
-                                                    case 16: return "Animation";
-                                                    case 35: return "Comedy";
-                                                    case 80: return "Crime";
-                                                    case 99: return "Documentary";
-                                                    case 18: return "Drama";
-                                                    case 10751: return "Family";
-                                                    case 14: return "Fantasy";
-                                                    case 36: return "History";
-                                                    case 27: return "Horror";
-                                                    case 10402: return "Music";
-                                                    case 9648: return "Mystery";
-                                                    case 10749: return "Romance";
-                                                    case 878: return "Science Fiction";
-                                                    case 53: return "Thriller";
-                                                    case 10752: return "War";
-                                                    case 37: return "Western";
-                                                    default: return null;
-                                                }
-                                            }).Where(g => g != null) ?? Array.Empty<string>())
+                                            Genres: @string.Join(", ", movie.Genres)
                                         </small>
                                     </p>
                                 </div>

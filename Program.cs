@@ -10,8 +10,9 @@ builder.Services.AddControllersWithViews();
 builder.Services.Configure<MovieDbSettings>(
     builder.Configuration.GetSection("TMDb"));
 
-// Add MovieService as a singleton
-builder.Services.AddSingleton<MovieService>();
+
+// Add IMovieService as a scoped
+builder.Services.AddScoped<IMovieService, TMDBMovieService>();
 
 var app = builder.Build();
 

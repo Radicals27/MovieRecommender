@@ -8,14 +8,14 @@ using Newtonsoft.Json;
 
 namespace MovieRecommender.Services
 {
-    public class MovieService
+    public class TMDBMovieService : IMovieService
     {
         private readonly TMDbClient _client;
         private readonly Dictionary<int, string> _genreMap;
         private readonly HttpClient _httpClient;
 
 
-        public MovieService(IOptions<MovieDbSettings> config)
+        public TMDBMovieService(IOptions<MovieDbSettings> config)
         {
             _client = new TMDbClient(config.Value.ApiKey);
             _genreMap = InitializeGenreMapAsync().GetAwaiter().GetResult();
@@ -42,7 +42,7 @@ namespace MovieRecommender.Services
         public class TmdbResponse
         {
             [JsonProperty("results")]
-            public List<TmdbMovie> Results { get; set; }
+            public required List<TmdbMovie> Results { get; set; }
         }
 
         public class TmdbMovie
@@ -51,22 +51,22 @@ namespace MovieRecommender.Services
             public int Id { get; set; }
 
             [JsonProperty("title")]
-            public string Title { get; set; }
+            public required string Title { get; set; }
 
             [JsonProperty("overview")]
-            public string Overview { get; set; }
+            public required string Overview { get; set; }
 
             [JsonProperty("poster_path")]
-            public string PosterPath { get; set; }
+            public required string PosterPath { get; set; }
 
             [JsonProperty("release_date")]
-            public string ReleaseDate { get; set; }
+            public required string ReleaseDate { get; set; }
 
             [JsonProperty("vote_average")]
             public double VoteAverage { get; set; }
 
             [JsonProperty("genre_ids")]
-            public List<int> GenreIds { get; set; }
+            public required List<int> GenreIds { get; set; }
 
             public SearchMovie ToSearchMovie()
             {
@@ -89,7 +89,7 @@ namespace MovieRecommender.Services
             }
         }
 
-        public async Task<List<SearchMovie>> DiscoverMoviesAsync(MovieFilterViewModel filters)
+        public async Task<IReadOnlyCollection<Movie>> DiscoverMoviesAsync(MovieFilterViewModel filters)
         {
             try
             {
@@ -185,13 +185,23 @@ namespace MovieRecommender.Services
                     }
                 }
 
-                return result;
+                return result.Select(sm => new Movie
+                {
+                    Id = sm.Id,
+                    Title = sm.Title,
+                    Overview = sm.Overview,
+                    PosterPath = sm.PosterPath,
+                    ReleaseDate = DateOnly.FromDateTime(sm.ReleaseDate ?? DateTime.MinValue),
+                    VoteAverage = sm.VoteAverage,
+                    Genres = sm.GenreIds?.Select(id => _genreMap.GetValueOrDefault(id, "Unknown")).ToList() ?? new List<string>()
+                }).ToList();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in DiscoverMoviesAsync: {ex}");
-                return new List<SearchMovie>();
+                return new List<Movie>();
             }
         }
+
     }
 }

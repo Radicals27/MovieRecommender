@@ -14,7 +14,7 @@ namespace MovieRecommender.Services
         private readonly TMDbClient _client;
         private readonly Dictionary<int, string> _genreMap;
         private readonly HttpClient _httpClient;
-        private const string BaseUrl = "https://api.themoviedb.org/3";
+
 
         public MovieService(IOptions<MovieDbSettings> config)
         {
@@ -114,7 +114,7 @@ namespace MovieRecommender.Services
                 for (int page = 1; page <= 5; page++)
                 {
                     //Build discover API URL with all parameters
-                    var url = $"{BaseUrl}/discover/movie?api_key={_client.ApiKey}&";
+                    var url = $"{MovieDbSettings.BaseAPIUrl}{_client.ApiKey}&";
 
                     url += $"page={page}&";
                     url += "include_adult=false&";

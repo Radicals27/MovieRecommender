@@ -10,7 +10,7 @@ namespace MovieRecommender.Models
         public required string PosterPath { get; set; }
         public DateOnly ReleaseDate { get; set; }
         public double VoteAverage { get; set; }
-        public List<string> Genres { get; set; } = new();
+        public IReadOnlyCollection<string> Genres { get; set; } = Array.Empty<string>();
         public Uri FullPosterPath => new Uri(MovieDbSettings.GetPosterUrl(PosterPath));
     }
 }

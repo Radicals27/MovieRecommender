@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using TMDbLib.Client;
-using TMDbLib.Objects.General;
 using TMDbLib.Objects.Search;
 using MovieRecommender.Models;
 using MovieRecommender.Config;

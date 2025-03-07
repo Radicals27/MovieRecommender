@@ -11,14 +11,14 @@ namespace MovieRecommender.Services
     public class TMDBMovieService : IMovieService
     {
         private readonly TMDbClient _client;
-        private readonly Dictionary<int, string> _genreMap;
         private readonly HttpClient _httpClient;
+        private Dictionary<int, string>? _genreMap;
 
+        private bool _isInitialized = false;
 
         public TMDBMovieService(IOptions<MovieDbSettings> config)
         {
             _client = new TMDbClient(config.Value.ApiKey);
-            _genreMap = InitializeGenreMapAsync().GetAwaiter().GetResult();
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -91,6 +91,8 @@ namespace MovieRecommender.Services
 
         public async Task<IReadOnlyCollection<Movie>> DiscoverMoviesAsync(MovieFilterViewModel filters)
         {
+            await InitializeAsync();
+
             try
             {
                 var allMovies = new List<SearchMovie>();
@@ -203,5 +205,13 @@ namespace MovieRecommender.Services
             }
         }
 
+        private async Task InitializeAsync()
+        {
+            if (!_isInitialized)
+            {
+                _genreMap = await InitializeGenreMapAsync();
+                _isInitialized = true;
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@ using TMDbLib.Objects.Search;
 using MovieRecommender.Models;
 using MovieRecommender.Config;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace MovieRecommender.Services
 {
@@ -21,6 +22,19 @@ namespace MovieRecommender.Services
             _client = new TMDbClient(config.Value.ApiKey);
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        }
+
+        private static class TmdbQueryParams
+        {
+            public const string Page = "page";
+            public const string IncludeAdult = "include_adult";
+            public const string VoteCountMin = "vote_count.gte";
+            public const string ReleaseDateMin = "primary_release_date.gte";
+            public const string ReleaseDateMax = "primary_release_date.lte";
+            public const string Genres = "with_genres";
+            public const string VoteAverageMin = "vote_average.gte";
+            public const string SortBy = "sort_by";
+            public const string SortByRating = "vote_average.desc";
         }
 
         private async Task<Dictionary<int, string>> InitializeGenreMapAsync()
@@ -110,35 +124,38 @@ namespace MovieRecommender.Services
                 // Get movies from different sources to ensure comprehensive results
                 for (int page = 1; page <= 5; page++)
                 {
+
+                    Dictionary<string, string> queryParams = new Dictionary<string, string>
+                    {
+                        [TmdbQueryParams.Page] = page.ToString(),
+                        [TmdbQueryParams.IncludeAdult] = "false",
+                        [TmdbQueryParams.VoteCountMin] = "100"
+                    };
+
                     //Build discover API URL with all parameters
-                    var url = $"{MovieDbSettings.BaseAPIUrl}{_client.ApiKey}&";
-
-                    url += $"page={page}&";
-                    url += "include_adult=false&";
-                    url += "vote_count.gte=100&";
-
                     if (filters.StartYear.HasValue)
                     {
-                        url += $"primary_release_date.gte={filters.StartYear}-01-01&";
+                        queryParams[TmdbQueryParams.ReleaseDateMin] = $"{filters.StartYear}-01-01";
                     }
                     if (filters.EndYear.HasValue)
                     {
-                        url += $"primary_release_date.lte={filters.EndYear}-12-31&";
+                        queryParams[TmdbQueryParams.ReleaseDateMax] = $"{filters.EndYear}-12-31";
                     }
                     if (selectedGenreIds.Any())
                     {
-                        url += $"with_genres={string.Join(",", selectedGenreIds)}&";
+                        queryParams[TmdbQueryParams.Genres] = string.Join(",", selectedGenreIds);
                     }
                     if (filters.MinimumRating.HasValue)
                     {
-                        url += $"vote_average.gte={filters.MinimumRating}&";
+                        queryParams[TmdbQueryParams.VoteAverageMin] = filters.MinimumRating.ToString();
                     }
 
-                    // Try rating sort
-                    var ratingUrl = url + "sort_by=vote_average.desc";
+                    var baseUrl = $"{MovieDbSettings.BaseAPIUrl}{_client.ApiKey}";
+                    var url = QueryHelpers.AddQueryString(baseUrl, queryParams);
+                    url = QueryHelpers.AddQueryString(url, TmdbQueryParams.SortBy, TmdbQueryParams.SortByRating);
 
                     // Get movies sorted by rating
-                    var ratingResponse = await _httpClient.GetAsync(ratingUrl);
+                    var ratingResponse = await _httpClient.GetAsync(url);
                     if (ratingResponse.IsSuccessStatusCode)
                     {
                         var content = await ratingResponse.Content.ReadAsStringAsync();

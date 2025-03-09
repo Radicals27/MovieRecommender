@@ -176,19 +176,10 @@ namespace MovieRecommender.Services
                 }
 
                 // Remove duplicates first
-                var dedupedMovies = allMovies
+                var result = allMovies
                     .GroupBy(m => m.Id)
                     .Select(g => g.First())
-                    .Where(m => m != null)
-                    .ToList();
-
-                // Skip date filtering since it's already handled in the API call
-                var ratingFiltered = dedupedMovies
                     .Where(m => !filters.MinimumRating.HasValue || m.VoteAverage >= filters.MinimumRating)
-                    .ToList();
-
-                // Return the filtered movies sorted by rating
-                var result = ratingFiltered
                     .OrderByDescending(m => m.VoteAverage)
                     .Take(50)
                     .ToList();

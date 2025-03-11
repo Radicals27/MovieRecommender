@@ -109,3 +109,4 @@ appsettings.Local.json
 *.Development.json
 *.Local.json 
 appsettings.json
+appsettings.Production.json
